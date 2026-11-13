@@ -1,0 +1,84 @@
+# =============================================================================
+#  NeuroSAGE Baselines - central TRAINING configuration
+#  Everything here can be overridden from the CLI, e.g.
+#     python train.py --model resnet50 --mode kfold --epochs 20
+#     python train.py --model vig --set training.lr=5e-5 --set data.image_size=224
+#  Precedence:  this file  <  models.yaml (per-model `training_overrides`)  <  CLI
+# =============================================================================
+
+experiment:
+  name: null                # null -> auto: <model>__<train>_to_<tests>__<mode>
+  output_dir: results       # every run writes results/<name>/summary.json (+ checkpoints, history)
+  seed: 42
+  device: auto              # auto | cuda | cpu
+  deterministic: false      # true = reproducible cuDNN (slower)
+
+data:
+  root: data                # prepared indices / converted images live here
+  auto_prepare: true        # download (kagglehub) + index a dataset automatically if missing
+  train_dataset: brisc2025  # dataset the model is trained on
+  # Evaluated after training with the best checkpoint.
+  #  - same name as train_dataset -> its held-out *test* split (in-domain, Table 4.6.1)
+  #  - any other dataset          -> the WHOLE dataset, zero-shot (cross-domain, Table 5.2)
+  test_datasets: [brisc2025, figshare]
+  image_size: 224
+  num_workers: 4
+  val_ratio: 0.15           # standard mode: fraction of the training pool held out for validation
+  test_ratio: 0.20          # only for datasets WITHOUT an official test split (e.g. Figshare)
+
+  datasets:
+    brisc2025:
+      display_name: BRISC
+      kaggle_slug: briscdataset/brisc2025
+      local_path: null        # set to an already-downloaded folder to skip Kaggle
+      format: imagefolder     # class-named folders, split taken from train/ test/ parents
+      subdir: classification_task
+      classes: [glioma, meningioma, no_tumor, pituitary]
+    figshare:
+      display_name: Figshare
+      kaggle_slug: ashkhagan/figshare-brain-tumor-dataset   # original Cheng et al. .mat files (with patient IDs)
+      local_path: null
+      format: figshare_mat    # .mat -> PNG conversion, keeps patient ID for patient-wise splits
+      label_map: {1: meningioma, 2: glioma, 3: pituitary}
+      classes: [glioma, meningioma, pituitary]
+
+  cross_domain:
+    # BRISC has 4 classes (incl. no_tumor), Figshare has 3. When evaluating zero-shot on a
+    # target that lacks some source classes:
+    #   true  -> argmax only over classes present in the target (no "no_tumor" predictions)
+    #   false -> plain argmax over all source classes (a "no_tumor" prediction counts as an error)
+    restrict_to_shared_classes: true
+
+training:
+  mode: standard            # standard | kfold
+  k_folds: 5                # used when mode == kfold
+  epochs: 20
+  batch_size: 32
+  grad_accum_steps: 1       # effective batch = batch_size * grad_accum_steps
+  optimizer: adamw          # adamw | sgd
+  lr: 1.0e-4
+  weight_decay: 0.05
+  momentum: 0.9             # sgd only
+  scheduler: cosine         # cosine | step | none
+  warmup_epochs: 2
+  min_lr: 1.0e-6
+  step_size: 7              # step scheduler only
+  gamma: 0.1                # step scheduler only
+  label_smoothing: 0.1
+  amp: true                 # mixed precision on CUDA
+  channels_last: true
+  grad_clip: 1.0            # null to disable
+  monitor: val_f1           # best-checkpoint metric: val_f1 | val_acc | val_loss
+  early_stopping_patience: null   # null = always run all epochs
+  save_checkpoints: true
+
+augmentation:
+  random_resized_crop_scale: [0.85, 1.0]
+  hflip: 0.5
+  rotation: 10
+  brightness: 0.1
+  contrast: 0.1
+
+evaluation:
+  average: macro            # macro | weighted  (precision / recall / F1)
+  flops_image_size: 224     # input size used for Params / FLOPs

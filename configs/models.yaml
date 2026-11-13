@@ -1,0 +1,74 @@
+# =============================================================================
+#  NeuroSAGE Baselines - central MODEL configuration
+#  Baselines from sheets 4.6.1 / 4.6.2 / 5.2 (NeuroSAGE-Net itself is not here).
+#
+#  Pick one with  --model <key>   (several: --model resnet50,vig   or   --model all)
+#  Any field can be overridden from the CLI:  --set models.vig.arch=pvig_b
+#
+#  Fields
+#    source             timm | vig
+#    timm_name          any timm model id (architecture.pretrained_tag)
+#    pretrained         load ImageNet weights
+#    training_overrides merged over configs/train.yaml -> training (per-model lr, batch size ...)
+# =============================================================================
+
+defaults:
+  pretrained: true
+  drop_rate: 0.0
+  drop_path_rate: 0.1
+
+models:
+  resnet50:
+    display_name: ResNet-50
+    paradigm: CNN Baselines
+    source: timm
+    timm_name: resnet50.tv_in1k
+    drop_path_rate: 0.0
+    training_overrides: {lr: 3.0e-4, weight_decay: 1.0e-4}
+
+  efficientnet_b0:
+    display_name: EfficientNet-B0
+    paradigm: CNN Baselines
+    source: timm
+    timm_name: efficientnet_b0.ra_in1k
+    drop_rate: 0.2
+    training_overrides: {lr: 3.0e-4, weight_decay: 1.0e-5}
+
+  convnext_base:
+    display_name: ConvNeXt-Base
+    paradigm: CNN Baselines
+    source: timm
+    timm_name: convnext_base.fb_in1k
+    drop_path_rate: 0.2
+    # 4 GB GPU friendly: 16 x 2 accumulation = effective batch 32
+    training_overrides: {lr: 1.0e-4, batch_size: 16, grad_accum_steps: 2}
+
+  vit_b16:
+    display_name: Standard ViT-B/16
+    paradigm: Vision Transformers
+    source: timm
+    timm_name: vit_base_patch16_224.augreg2_in21k_ft_in1k
+    training_overrides: {lr: 5.0e-5, batch_size: 16, grad_accum_steps: 2}
+
+  swin_base:
+    display_name: Swin-Base
+    paradigm: Vision Transformers
+    source: timm
+    timm_name: swin_base_patch4_window7_224.ms_in22k_ft_in1k
+    drop_path_rate: 0.2
+    training_overrides: {lr: 5.0e-5, batch_size: 16, grad_accum_steps: 2}
+
+  vig:
+    display_name: Vision GNN (ViG)
+    paradigm: Graph Neural Nets
+    source: vig
+    # Pyramid ViG (Han et al., NeurIPS 2022): pvig_ti | pvig_s | pvig_m | pvig_b
+    arch: pvig_s
+    k: 9                       # neighbours in the dynamic kNN graph
+    # Official ImageNet-1k weights (huawei-noah/Efficient-AI-Backbones). null -> train from scratch
+    pretrained_urls:
+      pvig_ti: https://github.com/huawei-noah/Efficient-AI-Backbones/releases/download/pyramid-vig/pvig_ti_78.5.pth.tar
+      pvig_s: https://github.com/huawei-noah/Efficient-AI-Backbones/releases/download/pyramid-vig/pvig_s_82.1.pth.tar
+      pvig_m: https://github.com/huawei-noah/Efficient-AI-Backbones/releases/download/pyramid-vig/pvig_m_83.1.pth.tar
+      pvig_b: https://github.com/huawei-noah/Efficient-AI-Backbones/releases/download/pyramid-vig/pvig_b_83.66.pth.tar
+    training_overrides: {lr: 1.0e-4, batch_size: 16, grad_accum_steps: 2}
