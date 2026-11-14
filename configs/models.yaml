@@ -26,6 +26,14 @@ models:
     drop_path_rate: 0.0
     training_overrides: {lr: 3.0e-4, weight_decay: 1.0e-4}
 
+  densenet121:
+    display_name: DenseNet-121
+    paradigm: CNN Baselines
+    source: timm
+    timm_name: densenet121.tv_in1k
+    drop_path_rate: 0.0
+    training_overrides: {lr: 3.0e-4, weight_decay: 1.0e-4}
+
   efficientnet_b0:
     display_name: EfficientNet-B0
     paradigm: CNN Baselines

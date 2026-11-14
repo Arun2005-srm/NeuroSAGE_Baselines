@@ -6,6 +6,7 @@ Tables **4.6.1** (SOTA comparison), **4.6.2** (statistical significance) and **5
 | Key | Model | Paradigm | Implementation |
 |---|---|---|---|
 | `resnet50` | ResNet-50 | CNN | timm `resnet50.tv_in1k` |
+| `densenet121` | DenseNet-121 | CNN | timm `densenet121.tv_in1k` |
 | `efficientnet_b0` | EfficientNet-B0 | CNN | timm `efficientnet_b0.ra_in1k` |
 | `convnext_base` | ConvNeXt-Base | CNN | timm `convnext_base.fb_in1k` |
 | `vit_b16` | Standard ViT-B/16 | Vision Transformer | timm `vit_base_patch16_224.augreg2_in21k_ft_in1k` |
